@@ -40,6 +40,13 @@ class MainActivity : ComponentActivity() {
     private val serverConversations = mutableMapOf<String, SnapshotStateList<ChatMessage>>()
     private val serverFileOwnersByName = mutableMapOf<String, String>()
     private val nextServerTransferId = java.util.concurrent.atomic.AtomicInteger(1000)
+    private val startupPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+            val denied = grants.filterValues { !it }.keys
+            if (denied.isNotEmpty()) {
+                Toast.makeText(this, "\u90E8\u5206\u6743\u9650\u672A\u6388\u4E88\uFF0C\u6587\u4EF6\u6536\u53D1\u6216\u5C40\u57DF\u7F51\u53D1\u73B0\u53EF\u80FD\u53D7\u5F71\u54CD", Toast.LENGTH_LONG).show()
+            }
+        }
     private val networkPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
             if (grants.values.all { it }) {
@@ -62,6 +69,7 @@ class MainActivity : ComponentActivity() {
         clientName = android.os.Build.MODEL
 
         setupCallbacks()
+        requestStartupPermissionsIfNeeded()
 
         setContent {
             LanChatTheme {
@@ -267,6 +275,27 @@ class MainActivity : ComponentActivity() {
         } else {
             networkPermissionLauncher.launch(missingPermissions.toTypedArray())
         }
+    }
+
+    private fun requestStartupPermissionsIfNeeded() {
+        val missingPermissions = requiredStartupPermissions().filter { permission ->
+            ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED
+        }
+        if (missingPermissions.isNotEmpty()) {
+            startupPermissionLauncher.launch(missingPermissions.toTypedArray())
+        }
+    }
+
+    private fun requiredStartupPermissions(): List<String> {
+        val permissions = mutableListOf<String>()
+        permissions.addAll(requiredClientPermissions())
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
+        return permissions.distinct()
     }
 
     private fun requiredClientPermissions(): List<String> {

@@ -3,6 +3,8 @@
 import android.content.Context
 import android.content.ContentValues
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import kotlinx.coroutines.*
@@ -27,8 +29,21 @@ class FileTransferManager(private val context: Context, private val scope: Corou
 
     /** 在系统 Download/LanChat 目录创建接收文件 */
     private fun createDownloadFile(fileName: String, fileSize: Long): Pair<Uri, OutputStream> {
+        val safeName = sanitizeFileName(fileName)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            val downloadDir = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                "LanChat"
+            )
+            if (!downloadDir.exists() && !downloadDir.mkdirs()) {
+                throw IOException("无法创建下载目录")
+            }
+            val targetFile = createUniqueFile(downloadDir, safeName)
+            return Uri.fromFile(targetFile) to FileOutputStream(targetFile)
+        }
+
         val values = ContentValues().apply {
-            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+            put(MediaStore.Downloads.DISPLAY_NAME, safeName)
             put(MediaStore.Downloads.SIZE, fileSize)
             put(MediaStore.Downloads.RELATIVE_PATH, "Download/LanChat")
         }
@@ -38,6 +53,26 @@ class FileTransferManager(private val context: Context, private val scope: Corou
         val outputStream = resolver.openOutputStream(uri)
             ?: throw IOException("无法打开下载文件")
         return uri to outputStream
+    }
+
+    private fun sanitizeFileName(fileName: String): String {
+        val cleanName = File(fileName).name
+            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+            .ifBlank { "received_file" }
+        return cleanName.take(180)
+    }
+
+    private fun createUniqueFile(dir: File, fileName: String): File {
+        val dotIndex = fileName.lastIndexOf('.')
+        val baseName = if (dotIndex > 0) fileName.substring(0, dotIndex) else fileName
+        val extension = if (dotIndex > 0) fileName.substring(dotIndex) else ""
+        var candidate = File(dir, fileName)
+        var index = 1
+        while (candidate.exists()) {
+            candidate = File(dir, "${baseName}_$index$extension")
+            index++
+        }
+        return candidate
     }
 
     /** 发送文件（通过 TcpClient） */

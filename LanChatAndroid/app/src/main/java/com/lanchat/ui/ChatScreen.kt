@@ -1,5 +1,6 @@
 ﻿package com.lanchat.ui
 
+import android.content.ActivityNotFoundException
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -47,6 +48,7 @@ fun ChatScreen(
 ) {
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val context = LocalContext.current
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -119,7 +121,11 @@ fun ChatScreen(
             ) {
                 // 文件按钮
                 IconButton(onClick = {
-                    filePickerLauncher.launch(arrayOf("*/*"))
+                    try {
+                        filePickerLauncher.launch(arrayOf("*/*"))
+                    } catch (_: ActivityNotFoundException) {
+                        Toast.makeText(context, "\u672A\u627E\u5230\u53EF\u7528\u7684\u6587\u4EF6\u9009\u62E9\u5668", Toast.LENGTH_SHORT).show()
+                    }
                 }) {
                     Icon(
                         Icons.Default.AttachFile,
