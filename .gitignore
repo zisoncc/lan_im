@@ -1,0 +1,66 @@
+# ====================
+# Windows 中间文件
+# ====================
+*.obj
+*.o
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.sbr
+*.idb
+*.ipdb
+*.iobj
+*.tlog
+*.log
+*.manifest
+*.res
+*.aps
+*.ncb
+*.suo
+*.sdf
+*.opendb
+*.db
+
+# VS 用户文件
+*.user
+*.vs/
+
+# ====================
+# Android 构建中间文件
+# ====================
+# 忽略 build 下的大多数文件，但保留最终 APK
+LanChatAndroid/app/build/**/*
+!LanChatAndroid/app/build/outputs/
+LanChatAndroid/app/build/outputs/**/*
+!LanChatAndroid/app/build/outputs/apk/
+LanChatAndroid/app/build/outputs/apk/**/*
+!LanChatAndroid/app/build/outputs/apk/release/
+!LanChatAndroid/app/build/outputs/apk/release/*.apk
+LanChatAndroid/.gradle/
+
+# ====================
+# Android 构建工具链（JDK/SDK/Gradle） 体积大，不提交
+# ====================
+LanChatAndroid/.build-tools/
+
+# ====================
+# IDE 相关
+# ====================
+.idea/
+*.iml
+.vscode/
+
+# ====================
+# 系统文件
+# ====================
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ====================
+# 其他
+# ====================
+*.bak
+*.swp
+*~
